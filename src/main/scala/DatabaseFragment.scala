@@ -39,8 +39,8 @@ class DatabaseFragment extends ListFragment with FragmentActor {
     val tuple = adapter.getItem(position)
 
     if(tuple._1 == "Artist") {
-      actor.get ! Database(this, "album " + "\"" + tuple._2 +"\"")
       adapter.clean
+      actor.get ! Database(this, "album " + "\"" + tuple._2 +"\"")
     }
   }
 
