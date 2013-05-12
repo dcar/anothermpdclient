@@ -36,12 +36,19 @@ trait ActivityActor {
 
   def disconnect() {
     actor.get ! Disconnect
+  }
+
+  def stop() {
+    disconnect
     actor.get ! Stop
     actor = None
   }
 
   def reconnect() {
-    actor.get ! Connect
+    actor match {
+      case Some(actorExists) => actorExists ! Connect
+      case None => Log.e("Actor", "Actor does not exist!")
+    }
   }
   
 }
@@ -68,7 +75,7 @@ class MainActivity extends FragmentActivity with ActivityActor {
 
   override def onPause() {
     super.onPause()
-    disconnect
+    stop
   }
 
   private def initializePaging(player: PlayerFragment, db: DatabaseFragment) {
@@ -87,6 +94,10 @@ class MainActivity extends FragmentActivity with ActivityActor {
     val adapter = pager.getAdapter.asInstanceOf[AMPDPagerAdapter]
     val fragment: FragmentActor = adapter.getItem(position).asInstanceOf[FragmentActor]
     return fragment
+  }
+
+  def run(fun: () => Unit): Unit = {
+    this.runOnUiThread(new Runnable { def run() = { fun() } } ) 
   }
 
   private def connectAndIdle() {

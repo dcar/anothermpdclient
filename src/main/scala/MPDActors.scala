@@ -55,7 +55,7 @@ class PlayerActor(ip: String, port: Int) extends Actor with MPDActor {
   }
 	
   private def setCurrentSong(player: PlayerFragment): Unit = {
-    val activity = player.getActivity
+    val activity = player.getActivity.asInstanceOf[MainActivity]
     val songInfo = player.getView.findViewById(R.id.songInfo).asInstanceOf[TextView]
 
     mpd.getMap("currentsong") match {
@@ -63,7 +63,7 @@ class PlayerActor(ip: String, port: Int) extends Actor with MPDActor {
         val artist = song.getOrElseUpdate("Artist", "N/A")
         val title = song.getOrElseUpdate("Title", "N/A")
 
-        activity.runOnUiThread(new Runnable { def run() = songInfo.setText(artist + " - " + title) }) 
+        activity.run { () => songInfo.setText(artist + " - " + title) }
 
         mpd.getMap("status") match {
           case Right(status) => {
@@ -78,19 +78,29 @@ class PlayerActor(ip: String, port: Int) extends Actor with MPDActor {
               case None => Log.i("Player", "Starting player...")
             }
 
-            activity.runOnUiThread(new Runnable { 
-              def run() {
-                pSlider.setProgress(elapsed) 
-                pSlider.setMax(time) 
-              }
+            activity.run( () => {
+              pSlider.setProgress(elapsed) 
+              pSlider.setMax(time)
             })
+
             scheduler = Some(context.system.scheduler.schedule(duration, duration, self, Increment(player)))
           }
-          case Left(error) => activity.runOnUiThread(new Runnable { def run() = songInfo.setText(error.toString) }); state = "stop"
+          case Left(error) => {
+            activity.run( () => {
+              songInfo.setText(error.toString)
+              Log.e("PlayerError", "Could not retrieve status.")
+            }) 
+            state = "stop"
+          }
         }
 
       }
-      case Left(error) => activity.runOnUiThread(new Runnable { def run() = songInfo.setText(error.toString) }); state = "stop"
+      case Left(error) => 
+        activity.run( () => {
+          songInfo.setText(error.toString)
+          Log.e("PlayerError", "Could not retrieve current song.")
+        }) 
+        state = "stop"
     }
     
   }
@@ -99,17 +109,15 @@ class PlayerActor(ip: String, port: Int) extends Actor with MPDActor {
     state match {
       case "play" => {
         val pSlider = player.getView.findViewById(R.id.playerSlider).asInstanceOf[SeekBar]
-        val activity = player.getActivity
+        val activity = player.getActivity.asInstanceOf[MainActivity]
         elapsed += 1
-        activity.runOnUiThread(new Runnable { 
-          def run() {
-            pSlider.setProgress(elapsed)
-            Log.i("Progress", elapsed.toString)
-          }
+        activity.run( () => {
+          pSlider.setProgress(elapsed)
+          Log.i("Progress", elapsed.toString)
         })
       }
-      case "pause" => Log.i("Player", "Player has been stopped."); scheduler.get.cancel
-      case "stop" => Log.i("Player", "Player has been paused."); scheduler.get.cancel
+      case "pause" => Log.i("Player", "Player has been paused."); scheduler.get.cancel
+      case "stop" => Log.i("Player", "Player has been stopped."); scheduler.get.cancel
     }
   }
 
@@ -139,18 +147,18 @@ class DatabaseActor(ip: String, port: Int) extends Actor with MPDActor {
   private def lsInfo(db: DatabaseFragment, kind: String) {
     val dbView = db.getView.findViewById(android.R.id.list).asInstanceOf[ListView]
     val adapter = dbView.getAdapter.asInstanceOf[DatabaseTupleAdapter]
-    val activity = db.getActivity
+    val activity = db.getActivity.asInstanceOf[MainActivity]
     mpd.getPairs("list " + kind) match {
       case Right(pairs) => {
         pairs.foreach { tuple =>
           if(adapter.checkItem(tuple) != true) adapter.addItem(tuple);
         }
-        activity.runOnUiThread(new Runnable { def run() = adapter.notifyDataSetChanged })
+        activity.run( () => adapter.notifyDataSetChanged )
       }
       case Left(error) => {
-        Log.e("DatabaseError", error.toString)
+        Log.e("DatabaseError", "Could not retrieve Database")
         adapter.clean
-        activity.runOnUiThread(new Runnable { def run() = adapter.notifyDataSetChanged })
+        activity.run( () => adapter.notifyDataSetChanged )
       }
     }
   }

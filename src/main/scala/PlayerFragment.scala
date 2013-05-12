@@ -30,7 +30,7 @@ class PlayerFragment extends Fragment with FragmentActor {
 
   override def onPause() {
     super.onPause
-    disconnect
+    stop
   }
 
   override def onResume() {

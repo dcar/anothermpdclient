@@ -31,7 +31,7 @@ class DatabaseFragment extends ListFragment with FragmentActor {
 
   override def onPause() {
     super.onPause
-    disconnect
+    stop
   }
 
   override def onListItemClick(lv: ListView, v: View, position: Int, id: Long) {

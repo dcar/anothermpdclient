@@ -9,6 +9,7 @@ object General {
     name := "anothermpdclient",
     version := "0.1",
     versionCode := 0,
+    javacOptions ++= Seq("-source", "1.6"),
     scalaVersion := "2.10.1",
     platformName in Android := "android-15",
     resolvers ++= Seq(
