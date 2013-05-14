@@ -12,7 +12,7 @@ import android.util.Log
 import akka.actor.{ActorSystem, ActorRef, Props}
 
 object MPDSystem {
-  val system = ActorSystem("MPDSystem")
+  var system: Option[ActorSystem] = Some(ActorSystem("MPDSystem"))
 }
 
 trait ActivityActor {
@@ -64,18 +64,31 @@ class MainActivity extends FragmentActivity with ActivityActor {
   override def onCreate(bundle: Bundle) {
     super.onCreate(bundle)
     setContentView(R.layout.main)
+    MPDSystem.system match {
+      case Some(systemExists) => Log.i("MPDSystem", "MPDSystem already exists")
+      case None => MPDSystem.system = Some(ActorSystem("MPDSystem"))
+    }
     initializePaging(new PlayerFragment, new DatabaseFragment)
+  }
+
+  override def onStart() {
+    super.onStart()
+    Log.i("MainActivity", "Activity started.")
     connectAndIdle
   }
 
-  override def onResume() {
-    super.onResume()
-    connectAndIdle
+  override def onRestart() {
+    super.onRestart()
+    Log.i("MainActivity", "Activity restarted.")
+    MPDSystem.system = Some(ActorSystem("MPDSystem"))
   }
 
-  override def onPause() {
-    super.onPause()
+  override def onStop() {
+    super.onStop()
+    Log.i("MainActivity", "Activity stopped.")
     stop
+    MPDSystem.system.get.shutdown
+    MPDSystem.system = None
   }
 
   private def initializePaging(player: PlayerFragment, db: DatabaseFragment) {
@@ -101,7 +114,7 @@ class MainActivity extends FragmentActivity with ActivityActor {
   }
 
   private def connectAndIdle() {
-    connect(MPDSystem.system.actorOf(Props(new IdleActor("192.168.0.2", 6600))))
+    connect(MPDSystem.system.get.actorOf(Props(new IdleActor("192.168.0.2", 6600))))
     actor.get ! Idle(this)
   }
 

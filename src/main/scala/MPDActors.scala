@@ -5,7 +5,7 @@ import smpd.{MPD, MPDMap, MPDPairs, MPDConnection}
 import akka.actor.Actor
 import akka.actor.Cancellable
 import scala.concurrent.duration.FiniteDuration
-import java.util.concurrent.TimeUnit.SECONDS;
+import java.util.concurrent.TimeUnit.SECONDS
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import android.util.Log

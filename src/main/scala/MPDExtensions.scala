@@ -70,7 +70,6 @@ trait MPDIdle extends MPDConnection {
       }
     } catch {
       case n: NullPointerException => {
-        Thread.sleep(5000)
         val player = activity.getFragment(0)
         val database = activity.getFragment(1)
         player.reconnect
@@ -80,7 +79,13 @@ trait MPDIdle extends MPDConnection {
         activity.reconnect
 
         Log.i(connectionError, "Retrying connection...")
-	if(forever) actor ! Idle(activity)
+	if(forever) { 
+          import scala.concurrent.duration.FiniteDuration
+          import java.util.concurrent.TimeUnit.SECONDS
+          import scala.concurrent.ExecutionContext.Implicits.global
+          val duration = new FiniteDuration(5, SECONDS)
+          MPDSystem.system.get.scheduler.scheduleOnce(duration, actor, Idle(activity))
+        }
       }
     }
   }

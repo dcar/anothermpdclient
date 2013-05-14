@@ -21,16 +21,17 @@ class DatabaseFragment extends ListFragment with FragmentActor {
   override def onActivityCreated(bundle: Bundle) {
     super.onActivityCreated(bundle)
     setListAdapter(new DatabaseTupleAdapter(this))
-    connect(MPDSystem.system.actorOf(Props(new DatabaseActor("192.168.0.2", 6600))))
-    update
   }
 
   override def update() {
-    actor.get ! Database(this, "artist")
+    actor match {
+      case Some(actorExists) => actorExists ! Database(this, "artist")
+      case None => Log.i("DatabaseActor", "Actor does not Exist")
+    }
   }
 
-  override def onPause() {
-    super.onPause
+  override def onStop() {
+    super.onStop
     stop
   }
 
@@ -45,9 +46,9 @@ class DatabaseFragment extends ListFragment with FragmentActor {
   }
 
 
-  override def onResume() {
-    super.onResume
-    connect(MPDSystem.system.actorOf(Props(new DatabaseActor("192.168.0.2", 6600))))
+  override def onStart() {
+    super.onStart
+    connect(MPDSystem.system.get.actorOf(Props(new DatabaseActor("192.168.0.2", 6600))))
     update
   }
 

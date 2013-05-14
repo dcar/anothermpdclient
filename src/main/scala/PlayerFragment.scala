@@ -22,27 +22,28 @@ class PlayerFragment extends Fragment with FragmentActor {
   override def onActivityCreated(bundle: Bundle) {
     super.onActivityCreated(bundle)
     val pSlider = getView.findViewById(R.id.playerSlider).asInstanceOf[SeekBar]
-    connect(MPDSystem.system.actorOf(Props(new PlayerActor("192.168.0.2", 6600))))
-    update
     val seekMPD = (progress: Int) => actor.get ! Seek(progress)
     setSeekBarListener(pSlider, seekMPD)
   }
 
-  override def onPause() {
-    super.onPause
+  override def onStop() {
+    super.onStop
     stop
   }
 
-  override def onResume() {
-    super.onResume
-    connect(MPDSystem.system.actorOf(Props(new PlayerActor("192.168.0.2", 6600))))
+  override def onStart() {
+    super.onStart
+    connect(MPDSystem.system.get.actorOf(Props(new PlayerActor("192.168.0.2", 6600))))
     update
   }
   
   override def update() {
-    actor.get ! Player(this)
+    actor match {
+      case Some(actorExists) => actorExists ! Player(this)
+      case None => Log.i("PlayerActor", "Actor does not exist.")
+    }
   }
-  
+
   private def setSeekBarListener(sb: SeekBar, actorMessage: Int => Unit) {
     sb.setOnSeekBarChangeListener(new OnSeekBarChangeListener() {
       override def onStartTrackingTouch(seekBar: SeekBar) {}
