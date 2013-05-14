@@ -24,6 +24,8 @@ class DatabaseFragment extends ListFragment with FragmentActor {
   }
 
   override def update() {
+    val adapter = getListAdapter.asInstanceOf[DatabaseTupleAdapter]
+    adapter.clean
     actor match {
       case Some(actorExists) => actorExists ! Database(this, "artist")
       case None => Log.i("DatabaseActor", "Actor does not Exist")

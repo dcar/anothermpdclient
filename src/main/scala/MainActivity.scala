@@ -13,6 +13,7 @@ import akka.actor.{ActorSystem, ActorRef, Props}
 
 object MPDSystem {
   var system: Option[ActorSystem] = Some(ActorSystem("MPDSystem"))
+  var connected = false
 }
 
 trait ActivityActor {
@@ -21,6 +22,7 @@ trait ActivityActor {
   private def createActor(actorRef: ActorRef) {
     actor = Some(actorRef)
     actor.get ! Connect
+    Log.i("Actor", "Actor created.")
   }
 
   def connect(actorRef: ActorRef) {
@@ -80,13 +82,16 @@ class MainActivity extends FragmentActivity with ActivityActor {
   override def onRestart() {
     super.onRestart()
     Log.i("MainActivity", "Activity restarted.")
-    MPDSystem.system = Some(ActorSystem("MPDSystem"))
   }
 
   override def onStop() {
     super.onStop()
     Log.i("MainActivity", "Activity stopped.")
     stop
+  }
+
+  override def onDestroy() {
+    super.onDestroy()
     MPDSystem.system.get.shutdown
     MPDSystem.system = None
   }

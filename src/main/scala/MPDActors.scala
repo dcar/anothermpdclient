@@ -101,6 +101,14 @@ class PlayerActor(ip: String, port: Int) extends Actor with MPDActor {
           Log.e("PlayerError", "Could not retrieve current song.")
         }) 
         state = "stop"
+        if(MPDSystem.connected) {
+          player.reconnect
+          player.update
+        }
+        else {
+          val duration = new FiniteDuration(5, SECONDS)
+          context.system.scheduler.scheduleOnce(duration, self, Player(player))
+        }
     }
     
   }
@@ -111,6 +119,7 @@ class PlayerActor(ip: String, port: Int) extends Actor with MPDActor {
         val pSlider = player.getView.findViewById(R.id.playerSlider).asInstanceOf[SeekBar]
         val activity = player.getActivity.asInstanceOf[MainActivity]
         elapsed += 1
+        if (elapsed > time) scheduler.get.cancel; player.reconnect; player.update
         activity.run( () => {
           pSlider.setProgress(elapsed)
           Log.i("Progress", elapsed.toString)
@@ -159,7 +168,16 @@ class DatabaseActor(ip: String, port: Int) extends Actor with MPDActor {
         Log.e("DatabaseError", "Could not retrieve Database")
         adapter.clean
         activity.run( () => adapter.notifyDataSetChanged )
-      }
+        if(MPDSystem.connected) {
+          db.reconnect
+          db.update
+        }
+        else {
+          val duration = new FiniteDuration(5, SECONDS)
+          context.system.scheduler.scheduleOnce(duration, self, Database(db, "artist"))
+        }
+
+      } 
     }
   }
 }

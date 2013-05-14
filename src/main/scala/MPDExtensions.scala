@@ -30,14 +30,17 @@ case object Disconnect
 trait MPDIdle extends MPDConnection {
   import android.util.Log
   import akka.actor.ActorRef
+  import scala.concurrent.duration.FiniteDuration
+  import java.util.concurrent.TimeUnit.SECONDS
 
   private val connectionError: String = "ConnectionError"
   private val mpdError: String = "MPDError"
+  val duration = new FiniteDuration(5, SECONDS)
 
   def idle(forever: Boolean = false, activity: MainActivity, actor: ActorRef) {
     try {
       out.println("idle")
-
+      MPDSystem.connected = true
       Stream.continually(in.readLine) foreach { line =>
         if (line == "OK") {
 	  out.flush
@@ -47,10 +50,11 @@ trait MPDIdle extends MPDConnection {
 	else if (line.matches("^ACK.*")) {
 	  Log.e(mpdError, line)
 	  Thread.sleep(5000)
+          MPDSystem.connected = false
 	  out.flush
 	  return
 	}
-	else if (line.matches("^OK MPD.*"))
+	else if (line.matches("^OK MPD.*")) 
 	  version = line.substring(7)
 	else {
 	  val value = line.split("^[^:]+:\\s")
@@ -70,20 +74,14 @@ trait MPDIdle extends MPDConnection {
       }
     } catch {
       case n: NullPointerException => {
-        val player = activity.getFragment(0)
-        val database = activity.getFragment(1)
-        player.reconnect
-        database.reconnect
-        player.update
-        database.update
-        activity.reconnect
-
-        Log.i(connectionError, "Retrying connection...")
+        MPDSystem.connected = false
 	if(forever) { 
+          Log.i(connectionError, "Retrying connection...")
           import scala.concurrent.duration.FiniteDuration
           import java.util.concurrent.TimeUnit.SECONDS
           import scala.concurrent.ExecutionContext.Implicits.global
-          val duration = new FiniteDuration(5, SECONDS)
+
+          activity.reconnect
           MPDSystem.system.get.scheduler.scheduleOnce(duration, actor, Idle(activity))
         }
       }
