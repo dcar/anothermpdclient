@@ -13,6 +13,10 @@ import akka.actor.{ActorRef, Props}
 class DatabaseFragment extends ListFragment with FragmentActor {
   var actor:Option[ActorRef] = None
 
+  override def onCreate(bundle: Bundle) {
+    super.onCreate(bundle)
+    connect(() => new DatabaseActor("192.168.0.2", 6600))
+  }
 
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, bundle: Bundle):View = {
     inflater.inflate(R.layout.database_view, container, false)
@@ -50,7 +54,6 @@ class DatabaseFragment extends ListFragment with FragmentActor {
 
   override def onStart() {
     super.onStart
-    connect(MPDSystem.system.get.actorOf(Props(new DatabaseActor("192.168.0.2", 6600))))
     update
   }
 

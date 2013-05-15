@@ -15,6 +15,11 @@ import akka.actor.{ActorRef, Props}
 class PlayerFragment extends Fragment with FragmentActor {
   var actor:Option[ActorRef] = None
 
+  override def onCreate(bundle: Bundle) {
+    super.onCreate(bundle)
+    connect(() => new PlayerActor("192.168.0.2", 6600))
+  }
+
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, bundle: Bundle):View = {
     inflater.inflate(R.layout.player_view, container, false)
   }
@@ -33,7 +38,6 @@ class PlayerFragment extends Fragment with FragmentActor {
 
   override def onStart() {
     super.onStart
-    connect(MPDSystem.system.get.actorOf(Props(new PlayerActor("192.168.0.2", 6600))))
     update
   }
   

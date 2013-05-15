@@ -19,20 +19,23 @@ object MPDSystem {
 trait ActivityActor {
   var actor: Option[ActorRef]
 
-  private def createActor(actorRef: ActorRef) {
+  private def createActor[T <: akka.actor.Actor](instantiateActor:() => T) {
+    val props = Props(instantiateActor)
+    val actorRef = MPDSystem.system.get.actorOf(props)
     actor = Some(actorRef)
     actor.get ! Connect
-    Log.i("Actor", "Actor created.")
+    Log.i(actor.get.toString, "Actor created and tried to connect.")
+
   }
 
-  def connect(actorRef: ActorRef) {
+  def connect[T <: akka.actor.Actor](instantiateActor:() => T) {
     actor match {
       case Some(actorExists) => {
         actorExists ! Stop
         actor = None
-        createActor(actorRef)
+        createActor(instantiateActor)
       }
-      case None => createActor(actorRef)
+      case None => createActor(instantiateActor)
     }
   }
 
@@ -52,7 +55,14 @@ trait ActivityActor {
       case None => Log.e("Actor", "Actor does not exist!")
     }
   }
-  
+
+  def checkActor(): Boolean = {
+    actor match {
+      case Some(actorExists) => return true
+      case None => return false
+    }
+  }
+
 }
 
 trait FragmentActor extends ActivityActor {
@@ -66,6 +76,7 @@ class MainActivity extends FragmentActivity with ActivityActor {
   override def onCreate(bundle: Bundle) {
     super.onCreate(bundle)
     setContentView(R.layout.main)
+    Log.i("MainActivity", "ActivityCreated")
     MPDSystem.system match {
       case Some(systemExists) => Log.i("MPDSystem", "MPDSystem already exists")
       case None => MPDSystem.system = Some(ActorSystem("MPDSystem"))
@@ -76,12 +87,20 @@ class MainActivity extends FragmentActivity with ActivityActor {
   override def onStart() {
     super.onStart()
     Log.i("MainActivity", "Activity started.")
-    connectAndIdle
+    connect(() => new IdleActor("192.168.0.2", 6600))
+  }
+
+  override def onResume() {
+    super.onResume()
+    Log.i("MainActivity", "Activity resumed.")
+    actor.get ! Idle(this)
   }
 
   override def onRestart() {
     super.onRestart()
     Log.i("MainActivity", "Activity restarted.")
+    getFragment(0).connect(() => new PlayerActor("192.168.0.2", 6600))
+    getFragment(1).connect(() => new DatabaseActor("192.168.0.2", 6600))
   }
 
   override def onStop() {
@@ -92,6 +111,7 @@ class MainActivity extends FragmentActivity with ActivityActor {
 
   override def onDestroy() {
     super.onDestroy()
+    Log.i("MainActivity", "Activity destroyed!.")
     MPDSystem.system.get.shutdown
     MPDSystem.system = None
   }
@@ -116,11 +136,6 @@ class MainActivity extends FragmentActivity with ActivityActor {
 
   def run(fun: () => Unit): Unit = {
     this.runOnUiThread(new Runnable { def run() = { fun() } } ) 
-  }
-
-  private def connectAndIdle() {
-    connect(MPDSystem.system.get.actorOf(Props(new IdleActor("192.168.0.2", 6600))))
-    actor.get ! Idle(this)
   }
 
 }
