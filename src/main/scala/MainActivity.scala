@@ -81,7 +81,7 @@ class MainActivity extends FragmentActivity with ActivityActor {
       case Some(systemExists) => Log.i("MPDSystem", "MPDSystem already exists")
       case None => MPDSystem.system = Some(ActorSystem("MPDSystem"))
     }
-    initializePaging(new PlayerFragment, new DatabaseFragment)
+    initializePaging()
   }
 
   override def onStart() {
@@ -116,10 +116,8 @@ class MainActivity extends FragmentActivity with ActivityActor {
     MPDSystem.system = None
   }
 
-  private def initializePaging(player: PlayerFragment, db: DatabaseFragment) {
+  private def initializePaging() {
     val pagerAdapter = new AMPDPagerAdapter(getSupportFragmentManager)
-    pagerAdapter.addFragment(player)
-    pagerAdapter.addFragment(db)
 		 
     val viewPager = findViewById(R.id.viewPager).asInstanceOf[ViewPager]
     viewPager.setAdapter(pagerAdapter)
@@ -127,10 +125,13 @@ class MainActivity extends FragmentActivity with ActivityActor {
     viewPager.setCurrentItem(0)
   }
 
+  private def reinitializePager() {
+  }
+
   def getFragment(position: Int): FragmentActor = {
     val pager = this.findViewById(R.id.viewPager).asInstanceOf[ViewPager]
     val adapter = pager.getAdapter.asInstanceOf[AMPDPagerAdapter]
-    val fragment: FragmentActor = adapter.getItem(position).asInstanceOf[FragmentActor]
+    val fragment: FragmentActor = adapter.instantiateItem(pager, position).asInstanceOf[FragmentActor]
     return fragment
   }
 

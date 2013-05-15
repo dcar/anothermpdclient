@@ -2,18 +2,15 @@ package dom.ampdclient
 import android.support.v4.app.{FragmentPagerAdapter, FragmentManager, Fragment}
 
 class AMPDPagerAdapter(manager: FragmentManager) extends FragmentPagerAdapter(manager) {
-  var fragmentList = new java.util.ArrayList[Fragment]
-	
-  def addFragment(fragment: Fragment) {
-    fragmentList.add(fragment)
-    notifyDataSetChanged
-  }
 	
   override def getCount():Int = {
-    fragmentList.size
+    return 2
   }
 	
   override def getItem(position: Int):Fragment = {
-    fragmentList.get(position)
+    position match {
+      case 0 => return new PlayerFragment
+      case 1 => return new DatabaseFragment
+    }
   }
 }
