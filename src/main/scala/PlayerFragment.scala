@@ -17,7 +17,7 @@ class PlayerFragment extends Fragment with FragmentActor {
 
   override def onCreate(bundle: Bundle) {
     super.onCreate(bundle)
-    connect(() => new PlayerActor("192.168.0.2", 6600))
+    connect(new PlayerActor(MPDSystem.ip, MPDSystem.port))
   }
 
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, bundle: Bundle):View = {

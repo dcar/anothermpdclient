@@ -14,12 +14,14 @@ import akka.actor.{ActorSystem, ActorRef, Props}
 object MPDSystem {
   var system: Option[ActorSystem] = Some(ActorSystem("MPDSystem"))
   var connected = false
+  val ip = "192.168.1.146"
+  val port = 6600
 }
 
 trait ActivityActor {
   var actor: Option[ActorRef]
 
-  private def createActor[T <: akka.actor.Actor](instantiateActor:() => T) {
+  private def createActor[T <: akka.actor.Actor](instantiateActor: => T) {
     val props = Props(instantiateActor)
     val actorRef = MPDSystem.system.get.actorOf(props)
     actor = Some(actorRef)
@@ -28,7 +30,7 @@ trait ActivityActor {
 
   }
 
-  def connect[T <: akka.actor.Actor](instantiateActor:() => T) {
+  def connect[T <: akka.actor.Actor](instantiateActor: => T) {
     actor match {
       case Some(actorExists) => {
         actorExists ! Stop
@@ -87,7 +89,7 @@ class MainActivity extends FragmentActivity with ActivityActor {
   override def onStart() {
     super.onStart()
     Log.i("MainActivity", "Activity started.")
-    connect(() => new IdleActor("192.168.0.2", 6600))
+    connect(new IdleActor(MPDSystem.ip, MPDSystem.port))
   }
 
   override def onResume() {
@@ -99,8 +101,8 @@ class MainActivity extends FragmentActivity with ActivityActor {
   override def onRestart() {
     super.onRestart()
     Log.i("MainActivity", "Activity restarted.")
-    getFragment(0).connect(() => new PlayerActor("192.168.0.2", 6600))
-    getFragment(1).connect(() => new DatabaseActor("192.168.0.2", 6600))
+    getFragment(0).connect(new PlayerActor(MPDSystem.ip, MPDSystem.port))
+    getFragment(1).connect(new DatabaseActor(MPDSystem.ip, MPDSystem.port))
   }
 
   override def onStop() {
@@ -125,8 +127,6 @@ class MainActivity extends FragmentActivity with ActivityActor {
     viewPager.setCurrentItem(0)
   }
 
-  private def reinitializePager() {
-  }
 
   def getFragment(position: Int): FragmentActor = {
     val pager = this.findViewById(R.id.viewPager).asInstanceOf[ViewPager]

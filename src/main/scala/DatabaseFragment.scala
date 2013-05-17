@@ -15,7 +15,7 @@ class DatabaseFragment extends ListFragment with FragmentActor {
 
   override def onCreate(bundle: Bundle) {
     super.onCreate(bundle)
-    connect(() => new DatabaseActor("192.168.0.2", 6600))
+    connect(new DatabaseActor(MPDSystem.ip, MPDSystem.port))
   }
 
   override def onCreateView(inflater: LayoutInflater, container: ViewGroup, bundle: Bundle):View = {
