@@ -63,7 +63,7 @@ class PlayerActor(ip: String, port: Int) extends Actor with MPDActor {
         val artist = song.getOrElseUpdate("Artist", "N/A")
         val title = song.getOrElseUpdate("Title", "N/A")
 
-        activity.run { () => songInfo.setText(artist + " - " + title) }
+        activity.run { songInfo.setText(artist + " - " + title) }
 
         mpd.getMap("status") match {
           case Right(status) => {
@@ -78,28 +78,28 @@ class PlayerActor(ip: String, port: Int) extends Actor with MPDActor {
               case None => Log.i("Player", "Starting player...")
             }
 
-            activity.run( () => {
+            activity.run {
               pSlider.setProgress(elapsed) 
               pSlider.setMax(time)
-            })
+            }
 
             scheduler = Some(context.system.scheduler.schedule(duration, duration, self, Increment(player)))
           }
           case Left(error) => {
-            activity.run( () => {
+            activity.run {
               songInfo.setText(error.toString)
               Log.e("PlayerError", "Could not retrieve status.")
-            }) 
+            }
             state = "stop"
           }
         }
 
       }
       case Left(error) => 
-        activity.run( () => {
+        activity.run {
           songInfo.setText(error.toString)
           Log.e("PlayerError", "Could not retrieve current song.")
-        }) 
+        }
         state = "stop"
         if(MPDSystem.connected) {
           player.reconnect
@@ -120,10 +120,10 @@ class PlayerActor(ip: String, port: Int) extends Actor with MPDActor {
         val activity = player.getActivity.asInstanceOf[MainActivity]
         elapsed += 1
         if (elapsed > time) scheduler.get.cancel; player.reconnect; player.update
-        activity.run( () => {
+        activity.run {
           pSlider.setProgress(elapsed)
           Log.i("Progress", elapsed.toString)
-        })
+        }
       }
       case "pause" => Log.i("Player", "Player has been paused."); scheduler.get.cancel
       case "stop" => Log.i("Player", "Player has been stopped."); scheduler.get.cancel
@@ -162,12 +162,12 @@ class DatabaseActor(ip: String, port: Int) extends Actor with MPDActor {
         pairs.foreach { tuple =>
           if(adapter.checkItem(tuple) != true) adapter.addItem(tuple);
         }
-        activity.run( () => adapter.notifyDataSetChanged )
+        activity.run { adapter.notifyDataSetChanged }
       }
       case Left(error) => {
         Log.e("DatabaseError", "Could not retrieve Database")
         adapter.clean
-        activity.run( () => adapter.notifyDataSetChanged )
+        activity.run { adapter.notifyDataSetChanged }
         if(MPDSystem.connected) {
           db.reconnect
           db.update

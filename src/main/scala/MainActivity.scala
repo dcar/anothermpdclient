@@ -135,8 +135,8 @@ class MainActivity extends FragmentActivity with ActivityActor {
     return fragment
   }
 
-  def run(fun: () => Unit): Unit = {
-    this.runOnUiThread(new Runnable { def run() = { fun() } } ) 
+  def run(fun: => Unit): Unit = {
+    this.runOnUiThread(new Runnable { def run() = { fun } } ) 
   }
 
 }
